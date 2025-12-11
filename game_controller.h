@@ -1,0 +1,42 @@
+//game_controller.h
+#pragma once
+#include <vector>
+#include <cstdint>
+#include "components.h"
+#include "movement.h"
+
+namespace Action {
+
+    class Game_Controller {
+
+        uint32_t score;
+        std::vector<std::vector<char>> Map;
+
+        Components::Pacman Pac_man; 
+        Movement pacman_mov;
+        std::vector<Components::Ghost> ghosts;
+
+    public:
+
+        Game_Controller(); //конструктор
+
+        void load_map(const std::vector<std::vector<char>>& Value);
+        void redraw_map(void);
+        void update_map(void);
+        void reset_map(void);
+        void update_scores(void);
+        void reset_pacman_position(void);
+        void reset_ghost_position(uint8_t num_of_ghost);
+        void refill_cookies(void);
+
+        bool has_cookie(const Components::Position &atPosition);
+        bool is_position_valid(const Components::Position &atPosition);
+        
+        const std::vector<std::vector<char>>& get_map() const {
+            return Map;
+        }
+        Components::Pacman get_pacman() {
+            return Pac_man;
+        }
+    };
+}
