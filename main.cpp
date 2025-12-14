@@ -1,8 +1,6 @@
-//main.cpp
 #include <iostream>
 #include <termios.h>
 #include <unistd.h>
-#include "movement.h"
 #include "game_controller.h"
 
 char getch() {
@@ -17,6 +15,8 @@ char getch() {
 }
 
 int main() {
+    srand(time(nullptr)); // Для случайных движений призраков
+    
     Action::Game_Controller game;
 
     if (!game.load_map_from_file("configs/map.txt"))
@@ -26,13 +26,12 @@ int main() {
         game.redraw_map();
 
         char c = getch();
-        auto& mov = game.get_pacman().get_movement();  // теперь getter
-
+        auto& pacman = game.get_pacman();
         
-        if (c == 'a') mov.move_left();
-        if (c == 'd') mov.move_right();
-        if (c == 'w') mov.move_up();
-        if (c == 's') mov.move_down();
+        if (c == 'a') pacman.move_left();
+        if (c == 'd') pacman.move_right();
+        if (c == 'w') pacman.move_up();
+        if (c == 's') pacman.move_down();
         
         if (c == 'q') break;
 
@@ -41,4 +40,5 @@ int main() {
     }
 
     std::cout << "GAME OVER\n";
+    return 0;
 }

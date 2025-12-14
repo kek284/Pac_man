@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <utility>
 
 namespace Action {
 
@@ -10,30 +11,17 @@ namespace Action {
 Game_Controller::Game_Controller() : score(0) {
     // Загружаем конфиг Pacman
     Pac_man.load_config("configs/pacman.cfg");
-
-  //load_ghosts_config("configs/ghost.cfg");
-
     // Инициализируем движение Pacman
-    Pac_man.get_movement().set_game(this);
-    Pac_man.get_movement().set_position(Pac_man.get_position_ptr());
-    
-    // Инициализируем движение призраков
-    for (auto& ghost : ghosts) {
-        ghost.init_movement(this);
-    }
+    Pac_man.init_movement(this);
 }
 
-// Возвращаем ссылку на Movement Pacman
-Movement& Game_Controller::pacman_movement() {
-    return Pac_man.get_movement();
-}
-
+// Возвращаем ссылку на Movement Pacman - УДАЛИТЬ ЭТОТ МЕТОД, ОН НЕ НУЖЕН
+// Движение теперь инкапсулировано в Pacman
 
 // Сбрасываем позицию Pacman
 void Game_Controller::reset_pacman_position() {
     if (!Map.empty()) {
         Pac_man.reset_to_default();
-        Pac_man.get_movement().set_position(Pac_man.get_position_ptr());
     }
 }
 
@@ -43,6 +31,7 @@ bool Game_Controller::is_game_over() const {
 }
 
 // Загружаем конфиг призраков
+// game_controller.cpp — исправленный load_ghosts_config
 void Game_Controller::load_ghosts_config(const std::string& filename) {
     std::ifstream file(filename);
     if (!file.is_open()) return;
@@ -53,12 +42,13 @@ void Game_Controller::load_ghosts_config(const std::string& filename) {
     while (std::getline(file, line)) {
         if (line.find("ghost:") != std::string::npos) {
             if (!block.empty()) {
-                Components::Ghost g;
+                Components::Ghost g;               // объявление в той же области видимости
                 g.load_config_block(block);
                 g.init_movement(this);
-                ghosts.push_back(g);
+                ghosts.push_back(std::move(g));    // перемещаем, не копируем
                 block.clear();
             }
+            // начинаем новый блок (строка "ghost:" сама по себе не сохраняется)
         } else if (!line.empty()) {
             block.push_back(line);
         }
@@ -68,12 +58,11 @@ void Game_Controller::load_ghosts_config(const std::string& filename) {
         Components::Ghost g;
         g.load_config_block(block);
         g.init_movement(this);
-        ghosts.push_back(g);
+        ghosts.push_back(std::move(g)); // переместить последний блок
     }
 }
 
 // Загружаем карту из файла
-// game_controller.cpp - исправленный метод load_map_from_file
 bool Game_Controller::load_map_from_file(const std::string& filename) {
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -82,7 +71,7 @@ bool Game_Controller::load_map_from_file(const std::string& filename) {
     }
 
     Map.clear();
-    ghosts.clear();
+    ghosts.clear();  // Очищаем перед загрузкой
 
     std::string line;
     int y = 0;
@@ -90,21 +79,32 @@ bool Game_Controller::load_map_from_file(const std::string& filename) {
     while (std::getline(file, line)) {
         std::vector<char> row;
 
-        // Используем int для x, но с проверкой
         for (int x = 0; x < static_cast<int>(line.size()); ++x) {
             char c = line[static_cast<size_t>(x)];
 
             if (c == 'P') {
-                Pac_man.set_default_position({x, y});
-                Pac_man.get_movement().set_position(Pac_man.get_position_ptr());
+                // Явно инициализируем позицию Pacman
+                Components::Position pac_pos{x, y};
+                Pac_man.set_default_position(pac_pos);
+                Pac_man.reset_to_default();  // Сбрасываем на стартовую позицию
+                Pac_man.init_movement(this); // Инициализируем движение
                 row.push_back(' ');
-            } else if (c == 'G') {
+                
+                std::cout << "Pacman placed at: (" << x << "," << y << ")\n";
+            } 
+            else if (c == 'G') {
+                // Создаем призрака и явно инициализируем его позицию
                 Components::Ghost g;
-                g.set_default_position({x, y});
+                Components::Position ghost_pos{x, y};
+                g.set_default_position(ghost_pos);
+                g.reset_to_default();  // Сбрасываем на стартовую позицию
                 g.init_movement(this);
-                ghosts.push_back(g);
+                ghosts.push_back(std::move(g)); // <-- move
                 row.push_back(' ');
-            } else {
+                
+                std::cout << "Ghost placed at: (" << x << "," << y << ")\n";
+            } 
+            else {
                 row.push_back(c);
             }
         }
@@ -115,6 +115,13 @@ bool Game_Controller::load_map_from_file(const std::string& filename) {
 
     std::cout << "Map loaded successfully. Size: " 
               << (Map.empty() ? 0 : Map[0].size()) << "x" << Map.size() << "\n";
+    
+    // Проверяем всех призраков после загрузки
+    for (size_t i = 0; i < ghosts.size(); ++i) {
+        Components::Position pos = ghosts[i].get_current_position();
+        std::cout << "Ghost " << i << " at: (" << pos.X_pos << "," << pos.Y_pos << ")\n";
+    }
+    
     return true;
 }
 
@@ -159,10 +166,6 @@ void Game_Controller::redraw_map() {
     }
 }
 
-// В update_map добавить проверки перед доступом к Map:
-
-
-
 // Обновление состояния карты
 void Game_Controller::update_map() {
     if (Map.empty()) return;
@@ -170,11 +173,11 @@ void Game_Controller::update_map() {
     Components::Position p_pos = Pac_man.get_current_position();
     bool pac_super = Pac_man.is_super_mode();
 
-    std::cout << "Updating ghosts...\n";
+    //std::cout << "Updating ghosts...\n";
     for (size_t i = 0; i < ghosts.size(); ++i) {
-        std::cout << "Ghost " << i << " at: (" 
-                  << ghosts[i].get_current_position().X_pos << ","
-                  << ghosts[i].get_current_position().Y_pos << ")\n";
+        // std::cout << "Ghost " << i << " at: (" 
+        //           << ghosts[i].get_current_position().X_pos << ","
+        //           << ghosts[i].get_current_position().Y_pos << ")\n";
         ghosts[i].update_gh_mov(p_pos, pac_super);
     }
 
@@ -227,8 +230,8 @@ void Game_Controller::reset_map() {
 }
 
 // Сброс позиции конкретного призрака
-void Game_Controller::reset_ghost_position(uint8_t num_of_ghost) {
-    if (!Map.empty() && num_of_ghost < ghosts.size()) {
+void Game_Controller::reset_ghost_position(int num_of_ghost) {
+    if (!Map.empty() && num_of_ghost >= 0 && num_of_ghost < static_cast<int>(ghosts.size())) {
         ghosts[num_of_ghost].reset_to_default();
     }
 }
@@ -241,29 +244,28 @@ bool Game_Controller::has_cookie(const Components::Position &atPosition) {
     return Map[atPosition.Y_pos][atPosition.X_pos] == '.';
 }
 
-
 // Проверка валидности позиции
 bool Game_Controller::is_position_valid(const Components::Position &atPosition) {
     if (Map.empty()) {
-        std::cout << "        is_position_valid: Map is empty\n";
+        //std::cout << "        is_position_valid: Map is empty\n";
         return false;
     }
     if (atPosition.Y_pos < 0 || atPosition.Y_pos >= (int)Map.size()) {  // Добавили проверку на < 0
-        std::cout << "        is_position_valid: Y out of bounds (" 
-                  << atPosition.Y_pos << " not in [0, " << Map.size() << "))\n";
+        // std::cout << "        is_position_valid: Y out of bounds (" 
+        //           << atPosition.Y_pos << " not in [0, " << Map.size() << "))\n";
         return false;
     }
     if (atPosition.X_pos < 0 || atPosition.X_pos >= (int)Map[atPosition.Y_pos].size()) {  // Добавили проверку на < 0
-        std::cout << "        is_position_valid: X out of bounds (" 
-                  << atPosition.X_pos << " not in [0, " << Map[atPosition.Y_pos].size() << "))\n";
+        // std::cout << "        is_position_valid: X out of bounds (" 
+        //           << atPosition.X_pos << " not in [0, " << Map[atPosition.Y_pos].size() << "))\n";
         return false;
     }
     
     char c = Map[atPosition.Y_pos][atPosition.X_pos];
     bool valid = (c != '#');
     
-    std::cout << "        is_position_valid: (" << atPosition.X_pos << "," << atPosition.Y_pos 
-              << ") = '" << c << "' -> " << (valid ? "VALID" : "INVALID (wall)") << "\n";
+    // std::cout << "        is_position_valid: (" << atPosition.X_pos << "," << atPosition.Y_pos 
+    //           << ") = '" << c << "' -> " << (valid ? "VALID" : "INVALID (wall)") << "\n";
     
     return valid;
 }

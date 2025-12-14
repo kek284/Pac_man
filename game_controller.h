@@ -9,9 +9,8 @@ namespace Action {
 
     class Game_Controller {
 
-        uint32_t score;
+        int score;
         std::vector<std::vector<char>> Map;
-
         Components::Pacman Pac_man; 
         std::vector<Components::Ghost> ghosts;
 
@@ -27,13 +26,12 @@ namespace Action {
         void reset_map(void);
         void update_scores(void);
         void reset_pacman_position(void);
-        void reset_ghost_position(uint8_t num_of_ghost);
+        void reset_ghost_position(int num_of_ghost);
         void refill_cookies(void);
 
         bool has_cookie(const Components::Position &atPosition);
         bool is_position_valid(const Components::Position &atPosition);
         
-        Movement& pacman_movement();
         const std::vector<std::vector<char>>& get_map() const {
             return Map;
         }

@@ -1,11 +1,13 @@
-// components.h - исправленная версия
 #pragma once
 #include <cstdint>
 #include <string>
 #include <vector>
-#include "movement.h"
+#include <iostream>
+#include <memory>
 
+// Предварительное объявление
 namespace Action {
+    class Movement;
     class Game_Controller;
 }
 
@@ -41,22 +43,39 @@ namespace Components {
 
     class Pacman : public Objects {
         bool super_mode_active = false;
-        uint8_t m_life;   
-        uint32_t super_timer = 0;
-        uint32_t super_duration = 30;
-        Action::Movement movement;
+        int m_life;   
+        int super_timer = 0;
+        int super_duration = 30;
+        std::unique_ptr<Action::Movement> movement;
 
     public:
-        Pacman() : m_life(3) {}
-        explicit Pacman(uint8_t life) : m_life(life) {}
+        Pacman() : m_life(3), movement(nullptr) {}
+        explicit Pacman(int life) : m_life(life), movement(nullptr) {}
+        ~Pacman() = default;
+
+        // Явные перемещающие операции (чтобы vector мог noexcept-перемещать объекты)
+        Pacman(Pacman&&) noexcept = default;
+        Pacman& operator=(Pacman&&) noexcept = default;
+
+        // копирование по-прежнему запрещено (из-за unique_ptr)
+        Pacman(const Pacman&) = delete;
+        Pacman& operator=(const Pacman&) = delete;
         
         void load_config(const std::string& filename);  
-        uint8_t get_life() const;
+        int get_life() const;
         void activate_super_mode();
         void update_super_mode();
         bool is_super_mode() const;
         void lose_life();
-        Action::Movement& get_movement() { return movement; }
+        
+        // Новые методы движения
+        bool move_left();
+        bool move_right();
+        bool move_up();
+        bool move_down();
+        
+        void init_movement(Action::Game_Controller* game);
+        Action::Movement* get_movement() { return movement.get(); }
     };
 
     enum class Direction {
@@ -65,21 +84,40 @@ namespace Components {
 
     class Ghost : public Objects {
     private:
-        uint32_t speed = 1;
-        unsigned int tick_counter = 0;  // Изменили uint на unsigned int
+        int speed = 1;
+        unsigned int tick_counter = 0; 
         Direction last_dir = Direction::None;
-        Action::Movement movement;
+        std::unique_ptr<Action::Movement> movement;
         
     public:
-        Ghost() : Objects(), speed(1), tick_counter(0), last_dir(Direction::None) {}
-        explicit Ghost(uint8_t s) : Objects(), speed(s), tick_counter(0), last_dir(Direction::None) {}
+        Ghost() : Objects(), speed(1), tick_counter(0), last_dir(Direction::None), movement(nullptr) {
+            current_Pos = {0, 0};
+            default_Pos = {0, 0};
+        }
+        
+        explicit Ghost(int s) : Objects(), speed(s), tick_counter(0), last_dir(Direction::None), movement(nullptr) {
+            current_Pos = {0, 0};
+            default_Pos = {0, 0};
+        }
+        
+        ~Ghost() = default;
+
+        // Явные перемещающие операции (для noexcept-перемещения)
+        Ghost(Ghost&&) noexcept = default;
+        Ghost& operator=(Ghost&&) noexcept = default;
+
+        // копирование запрещено
+        Ghost(const Ghost&) = delete;
+        Ghost& operator=(const Ghost&) = delete;
         
         void load_config_block(const std::vector<std::string>& block);
-        uint32_t get_speed() const;
+        int get_speed() const;
         void init_movement(Action::Game_Controller* game);
         void update_gh_mov(const Position& p_pos, bool pac_super);
         int dist(const Position& a, const Position& b);
         Direction opposite(Direction d);
-        Action::Movement& get_movement() { return movement; }
+        Action::Movement* get_movement() { return movement.get(); }
+        
+        
     };
 }
