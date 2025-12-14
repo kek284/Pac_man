@@ -13,13 +13,14 @@ namespace Action {
         std::vector<std::vector<char>> Map;
 
         Components::Pacman Pac_man; 
-        Movement pacman_mov;
         std::vector<Components::Ghost> ghosts;
 
     public:
 
         Game_Controller(); //конструктор
 
+        void load_ghosts_config(const std::string& filename);
+        bool load_map_from_file(const std::string& filename);
         void load_map(const std::vector<std::vector<char>>& Value);
         void redraw_map(void);
         void update_map(void);
@@ -32,11 +33,14 @@ namespace Action {
         bool has_cookie(const Components::Position &atPosition);
         bool is_position_valid(const Components::Position &atPosition);
         
+        Movement& pacman_movement();
         const std::vector<std::vector<char>>& get_map() const {
             return Map;
         }
-        Components::Pacman get_pacman() {
+        Components::Pacman& get_pacman() {
             return Pac_man;
         }
+        bool is_game_over() const;
+
     };
 }

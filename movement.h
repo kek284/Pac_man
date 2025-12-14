@@ -24,7 +24,7 @@ namespace Action {
             bool move_right();
             bool move_up();
             bool move_down();
-        private:
+
             bool is_movable(const Components::Position& pos) const;
     };
 }
