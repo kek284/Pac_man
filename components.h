@@ -5,7 +5,6 @@
 #include <iostream>
 #include <memory>
 
-// Предварительное объявление
 namespace Action {
     class Movement;
     class Game_Controller;
@@ -53,11 +52,7 @@ namespace Components {
         explicit Pacman(int life) : m_life(life), movement(nullptr) {}
         ~Pacman() = default;
 
-        // Явные перемещающие операции (чтобы vector мог noexcept-перемещать объекты)
-        Pacman(Pacman&&) noexcept = default;
-        Pacman& operator=(Pacman&&) noexcept = default;
-
-        // копирование по-прежнему запрещено (из-за unique_ptr)
+        // копирование по-прежнему (из-за unique_ptr)
         Pacman(const Pacman&) = delete;
         Pacman& operator=(const Pacman&) = delete;
         
@@ -68,7 +63,6 @@ namespace Components {
         bool is_super_mode() const;
         void lose_life();
         
-        // Новые методы движения
         bool move_left();
         bool move_right();
         bool move_up();

@@ -49,7 +49,7 @@ namespace Components {
     }
 
     void Pacman::init_movement(Action::Game_Controller* game) {
-        movement = std::make_unique<Action::Movement>(game); // <-- unique_ptr создаётся здесь
+        movement = std::make_unique<Action::Movement>(game); // unique_ptr
     }
 
     bool Pacman::move_left() {
@@ -134,26 +134,17 @@ namespace Components {
     }
 
     void Ghost::init_movement(Action::Game_Controller* game) {
-        movement = std::make_unique<Action::Movement>(game); // <-- unique_ptr создаётся здесь
-        
-        // Проверяем, что координаты инициализированы
-        // std::cout << "Ghost init_movement: current_Pos = (" 
-        //           << current_Pos.X_pos << "," << current_Pos.Y_pos << ")\n";
-        // std::cout << "Ghost init_movement: default_Pos = (" 
-        //           << default_Pos.X_pos << "," << default_Pos.Y_pos << ")\n";
-        
+        movement = std::make_unique<Action::Movement>(game); // unique_ptr
         if (!game->is_position_valid(current_Pos)) {
-            //std::cout << "Warning: ghost starting position is invalid! Resetting to default.\n";
             reset_to_default();
         }
     }
     
 
     void Ghost::update_gh_mov(const Position& pac_pos, bool pac_super) {
-        // Сначала проверяем, что координаты инициализированы
+        // проверяем, что координаты инициализированы
         if (current_Pos.X_pos < -1000 || current_Pos.X_pos > 1000 || 
             current_Pos.Y_pos < -1000 || current_Pos.Y_pos > 1000) {
-            //std::cout << "ERROR: Ghost has invalid coordinates! Resetting.\n";
             reset_to_default();
             return;
         }
@@ -163,10 +154,7 @@ namespace Components {
         if (tick_counter % speed != 0) return;
         
         if (!movement) return;
-        
-        // std::cout << "Ghost attempting to move from ("
-        //           << current_Pos.X_pos << "," << current_Pos.Y_pos << ")\n";
-        
+                
         Position new_pos = current_Pos;
         bool moved = false;
         
@@ -189,7 +177,7 @@ namespace Components {
                 if (new_pos.Y_pos != current_Pos.Y_pos) moved = true;
             }
         } else {
-            // Убегание (обратная логика)
+            // Убегание 
             if (pac_pos.X_pos > current_Pos.X_pos) {
                 new_pos = movement->move_left(current_Pos);
                 if (new_pos.X_pos != current_Pos.X_pos) moved = true;
@@ -210,7 +198,6 @@ namespace Components {
         
         // Если не удалось двигаться к цели, пробуем случайные направления
         if (!moved) {
-            //std::cout << "  -> trying random directions\n";
             int directions[4] = {0, 1, 2, 3};
             
             for (int i = 0; i < 4; i++) {
@@ -242,10 +229,6 @@ namespace Components {
         
         if (moved) {
             current_Pos = new_pos;
-            // std::cout << "Ghost moved to (" 
-            //           << current_Pos.X_pos << "," << current_Pos.Y_pos << ")\n";
-        } else {
-            //std::cout << "  -> cannot move, staying put\n";
         }
     }
 

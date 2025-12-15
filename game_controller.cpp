@@ -15,23 +15,17 @@ Game_Controller::Game_Controller() : score(0) {
     Pac_man.init_movement(this);
 }
 
-// Возвращаем ссылку на Movement Pacman - УДАЛИТЬ ЭТОТ МЕТОД, ОН НЕ НУЖЕН
-// Движение теперь инкапсулировано в Pacman
-
-// Сбрасываем позицию Pacman
 void Game_Controller::reset_pacman_position() {
     if (!Map.empty()) {
         Pac_man.reset_to_default();
     }
 }
 
-// Проверяем, закончена ли игра
 bool Game_Controller::is_game_over() const {
     return Pac_man.get_life() == 0;
 }
 
 // Загружаем конфиг призраков
-// game_controller.cpp — исправленный load_ghosts_config
 void Game_Controller::load_ghosts_config(const std::string& filename) {
     std::ifstream file(filename);
     if (!file.is_open()) return;
@@ -42,13 +36,12 @@ void Game_Controller::load_ghosts_config(const std::string& filename) {
     while (std::getline(file, line)) {
         if (line.find("ghost:") != std::string::npos) {
             if (!block.empty()) {
-                Components::Ghost g;               // объявление в той же области видимости
+                Components::Ghost g;               
                 g.load_config_block(block);
                 g.init_movement(this);
-                ghosts.push_back(std::move(g));    // перемещаем, не копируем
+                ghosts.push_back(std::move(g));    
                 block.clear();
             }
-            // начинаем новый блок (строка "ghost:" сама по себе не сохраняется)
         } else if (!line.empty()) {
             block.push_back(line);
         }
@@ -62,7 +55,6 @@ void Game_Controller::load_ghosts_config(const std::string& filename) {
     }
 }
 
-// Загружаем карту из файла
 bool Game_Controller::load_map_from_file(const std::string& filename) {
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -89,9 +81,7 @@ bool Game_Controller::load_map_from_file(const std::string& filename) {
                 Pac_man.reset_to_default();  // Сбрасываем на стартовую позицию
                 Pac_man.init_movement(this); // Инициализируем движение
                 row.push_back(' ');
-                
-                std::cout << "Pacman placed at: (" << x << "," << y << ")\n";
-            } 
+                } 
             else if (c == 'G') {
                 // Создаем призрака и явно инициализируем его позицию
                 Components::Ghost g;
@@ -99,7 +89,7 @@ bool Game_Controller::load_map_from_file(const std::string& filename) {
                 g.set_default_position(ghost_pos);
                 g.reset_to_default();  // Сбрасываем на стартовую позицию
                 g.init_movement(this);
-                ghosts.push_back(std::move(g)); // <-- move
+                ghosts.push_back(std::move(g)); // move
                 row.push_back(' ');
                 
                 std::cout << "Ghost placed at: (" << x << "," << y << ")\n";
@@ -112,22 +102,8 @@ bool Game_Controller::load_map_from_file(const std::string& filename) {
         Map.push_back(row);
         y++;
     }
-
-    std::cout << "Map loaded successfully. Size: " 
-              << (Map.empty() ? 0 : Map[0].size()) << "x" << Map.size() << "\n";
-    
-    // Проверяем всех призраков после загрузки
-    for (size_t i = 0; i < ghosts.size(); ++i) {
-        Components::Position pos = ghosts[i].get_current_position();
-        std::cout << "Ghost " << i << " at: (" << pos.X_pos << "," << pos.Y_pos << ")\n";
-    }
-    
+   
     return true;
-}
-
-// Загружаем карту из вектора
-void Game_Controller::load_map(const std::vector<std::vector<char>>& Value) {
-    Map = Value;
 }
 
 // Перерисовываем карту

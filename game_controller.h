@@ -20,14 +20,11 @@ namespace Action {
 
         void load_ghosts_config(const std::string& filename);
         bool load_map_from_file(const std::string& filename);
-        void load_map(const std::vector<std::vector<char>>& Value);
         void redraw_map(void);
         void update_map(void);
         void reset_map(void);
-        void update_scores(void);
         void reset_pacman_position(void);
         void reset_ghost_position(int num_of_ghost);
-        void refill_cookies(void);
 
         bool has_cookie(const Components::Position &atPosition);
         bool is_position_valid(const Components::Position &atPosition);
