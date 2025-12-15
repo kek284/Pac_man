@@ -157,7 +157,7 @@ namespace Components {
                 
         Position new_pos = current_Pos;
         bool moved = false;
-        
+        if (behavior_chase) {
         if (!pac_super) {
             // Преследование
             if (pac_pos.X_pos > current_Pos.X_pos) {
@@ -194,10 +194,8 @@ namespace Components {
                 new_pos = movement->move_down(current_Pos);
                 if (new_pos.Y_pos != current_Pos.Y_pos) moved = true;
             }
-        }
-        
-        // Если не удалось двигаться к цели, пробуем случайные направления
-        if (!moved) {
+        } }
+        else { //рандомное движение
             int directions[4] = {0, 1, 2, 3};
             
             for (int i = 0; i < 4; i++) {
@@ -226,6 +224,7 @@ namespace Components {
                 }
             }
         }
+    
         
         if (moved) {
             current_Pos = new_pos;

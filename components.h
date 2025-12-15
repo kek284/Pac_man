@@ -82,14 +82,15 @@ namespace Components {
         unsigned int tick_counter = 0; 
         Direction last_dir = Direction::None;
         std::unique_ptr<Action::Movement> movement;
+        bool behavior_chase = true; //режим погони
         
     public:
-        Ghost() : Objects(), speed(1), tick_counter(0), last_dir(Direction::None), movement(nullptr) {
+        Ghost() : Objects(), speed(1), tick_counter(0), last_dir(Direction::None), movement(nullptr), behavior_chase(true){
             current_Pos = {0, 0};
             default_Pos = {0, 0};
         }
         
-        explicit Ghost(int s) : Objects(), speed(s), tick_counter(0), last_dir(Direction::None), movement(nullptr) {
+        explicit Ghost(int s) : Objects(), speed(s), tick_counter(0), last_dir(Direction::None), movement(nullptr), behavior_chase(true){
             current_Pos = {0, 0};
             default_Pos = {0, 0};
         }
@@ -107,6 +108,12 @@ namespace Components {
         void load_config_block(const std::vector<std::string>& block);
         int get_speed() const;
         void init_movement(Action::Game_Controller* game);
+        void set_speed(int s) {
+            speed = (s > 0 ? s : 1);
+        }
+        void set_behavior(bool chase) {
+            behavior_chase = chase;
+        }
         void update_gh_mov(const Position& p_pos, bool pac_super);
         int dist(const Position& a, const Position& b);
         Direction opposite(Direction d);
